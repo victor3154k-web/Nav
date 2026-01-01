@@ -6,66 +6,77 @@
 <title>Área do Usuário</title>
 
 <style>
-*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
-body{margin:0;background:#f2f2f2;height:100vh}
+/* ===== RESET ===== */
+*{
+  box-sizing:border-box;
+  font-family:Arial,Helvetica,sans-serif;
+}
 
-/* LOGIN */
+/* ===== BODY ===== */
+body{
+  margin:0;
+  background:#f2f2f2;
+  height:100vh;
+}
+
+/* ===== LOGIN ===== */
 #login{
   height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
 }
+
 .login-box{
+  width:320px;
   background:#fff;
-  width:300px;
   padding:20px;
   border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,.2);
+  box-shadow:0 2px 10px rgba(0,0,0,.2);
 }
+
 .login-box h3{
   text-align:center;
   margin-bottom:15px;
 }
+
 .login-box input{
   width:100%;
   padding:10px;
   margin-bottom:10px;
 }
+
 .login-box button{
   width:100%;
   padding:10px;
+  cursor:pointer;
 }
 
-/* APP */
+/* ===== APP ===== */
 #app{
   display:none;
   height:100vh;
   flex-direction:column;
 }
+
 .top{
   display:flex;
+  gap:5px;
   padding:8px;
   background:#fff;
 }
+
 .top input{
   flex:1;
   padding:8px;
 }
-.top button{
-  margin-left:5px;
-}
+
 iframe{
   flex:1;
   border:none;
 }
-.bottom{
-  background:#fff;
-  padding:6px;
-  text-align:center;
-}
 
-/* MENU */
+/* ===== MENU ===== */
 #menu{
   position:fixed;
   bottom:0;
@@ -75,36 +86,40 @@ iframe{
   border-top:1px solid #ccc;
   display:none;
 }
+
 #menu div{
   padding:12px;
   border-bottom:1px solid #eee;
+  text-align:center;
+  cursor:pointer;
 }
 
-/* HISTÓRICO */
+/* ===== HISTÓRICO ===== */
 #history{
   display:none;
   padding:10px;
 }
+
 #history div{
   background:#fff;
-  margin-bottom:5px;
   padding:8px;
+  margin-bottom:5px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="login">
+<!-- ===== LOGIN ===== -->
+<div id="login" data-mode="">
   <div class="login-box">
     <h3 id="loginTitle">Área do Usuário</h3>
-    <input type="password" id="passMain" placeholder="Digite sua senha">
+    <input type="password" id="passMain">
     <button onclick="handleLogin()">Continuar</button>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ===== APP ===== -->
 <div id="app">
   <div class="top">
     <input id="url" placeholder="Pesquisar ou endereço">
@@ -113,55 +128,59 @@ iframe{
   </div>
 
   <iframe id="view"></iframe>
-
-  <div class="bottom">Sistema protegido</div>
 </div>
 
-<!-- MENU -->
+<!-- ===== MENU ===== -->
 <div id="menu">
   <div onclick="openHistory()">Histórico</div>
   <div onclick="lock()">Bloquear</div>
 </div>
 
-<!-- HISTÓRICO -->
+<!-- ===== HISTÓRICO ===== -->
 <div id="history"></div>
 
 <script>
-/* ====== CONFIG ====== */
+/* ===== CONFIG ===== */
 const PASS_KEY = "user_password";
 const HISTORY_KEY = "nav_history";
 
-/* ====== INICIAL ====== */
-window.onload = ()=>{
+/* ===== INIT ===== */
+window.onload = () => {
   if(hasPassword()){
     loginTitle.textContent = "Área do Usuário";
     passMain.placeholder = "Digite sua senha";
+    login.dataset.mode = "login";
   }else{
     loginTitle.textContent = "Criar senha";
     passMain.placeholder = "Crie uma senha";
+    login.dataset.mode = "create";
   }
 };
 
-/* ====== SENHA ====== */
+/* ===== SENHA ===== */
 function hasPassword(){
   return localStorage.getItem(PASS_KEY) !== null;
 }
 
 function handleLogin(){
-  hasPassword() ? login() : createPassword();
+  if(login.dataset.mode === "create"){
+    createPassword();
+  }else{
+    loginUser();
+  }
 }
 
 function createPassword(){
   const p = passMain.value.trim();
   if(p.length < 4){
-    alert("Mínimo 4 caracteres");
+    alert("A senha deve ter no mínimo 4 caracteres");
     return;
   }
   localStorage.setItem(PASS_KEY,p);
   unlockApp();
 }
 
-function login(){
+function loginUser(){
   if(passMain.value === localStorage.getItem(PASS_KEY)){
     unlockApp();
   }else{
@@ -170,53 +189,61 @@ function login(){
 }
 
 function unlockApp(){
-  sessionStorage.auth="1";
-  login.style.display="none";
-  app.style.display="flex";
-  passMain.value="";
+  sessionStorage.auth = "1";
+  login.style.display = "none";
+  app.style.display = "flex";
+  passMain.value = "";
 }
 
-/* ====== NAVEGAÇÃO ====== */
+/* ===== NAVEGAÇÃO ===== */
 function go(){
-  let u=url.value.trim();
+  let u = url.value.trim();
   if(!u) return;
 
   if(!u.startsWith("http")){
-    u="https://duckduckgo.com/?q="+encodeURIComponent(u);
+    u = "https://duckduckgo.com/?q=" + encodeURIComponent(u);
   }
-  view.src=u;
+
+  view.src = u;
   saveHistory(u);
 }
 
-/* ====== HISTÓRICO ====== */
+/* ===== HISTÓRICO ===== */
 function saveHistory(u){
-  if(sessionStorage.auth!=="1")return;
-  const h=JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]");
-  h.push({u,t:new Date().toLocaleString()});
-  localStorage.setItem(HISTORY_KEY,JSON.stringify(h));
+  if(sessionStorage.auth !== "1") return;
+
+  const h = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  h.push({ url:u, time:new Date().toLocaleString() });
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
 }
 
 function openHistory(){
-  if(sessionStorage.auth!=="1")return;
-  history.innerHTML="";
-  const h=JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]");
-  h.reverse().forEach(i=>{
-    const d=document.createElement("div");
-    d.textContent=i.t+" - "+i.u;
+  if(sessionStorage.auth !== "1") return;
+
+  history.innerHTML = "";
+  const h = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]").reverse();
+
+  h.forEach(i=>{
+    const d = document.createElement("div");
+    d.textContent = i.time + " - " + i.url;
     history.appendChild(d);
   });
-  history.style.display="block";
-  menu.style.display="none";
+
+  history.style.display = "block";
+  menu.style.display = "none";
 }
 
-/* ====== MENU ====== */
+/* ===== MENU ===== */
 function toggleMenu(){
-  menu.style.display = menu.style.display==="block"?"none":"block";
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
 }
 
-/* ====== BLOQUEIO ====== */
+/* ===== BLOQUEIO ===== */
 function lock(){
   sessionStorage.clear();
   location.reload();
 }
-</script
+</script>
+
+</body>
+</html>
