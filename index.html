@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Área do Usuário</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{margin:0;background:#f2f2f2;height:100vh}
+
+/* LOGIN */
+#login{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.login-box{
+  background:#fff;
+  width:300px;
+  padding:20px;
+  border-radius:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.login-box h3{
+  text-align:center;
+  margin-bottom:15px;
+}
+.login-box input{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+}
+.login-box button{
+  width:100%;
+  padding:10px;
+}
+
+/* APP */
+#app{
+  display:none;
+  height:100vh;
+  flex-direction:column;
+}
+.top{
+  display:flex;
+  padding:8px;
+  background:#fff;
+}
+.top input{
+  flex:1;
+  padding:8px;
+}
+.top button{
+  margin-left:5px;
+}
+iframe{
+  flex:1;
+  border:none;
+}
+.bottom{
+  background:#fff;
+  padding:6px;
+  text-align:center;
+}
+
+/* MENU */
+#menu{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#fff;
+  border-top:1px solid #ccc;
+  display:none;
+}
+#menu div{
+  padding:12px;
+  border-bottom:1px solid #eee;
+}
+
+/* HISTÓRICO */
+#history{
+  display:none;
+  padding:10px;
+}
+#history div{
+  background:#fff;
+  margin-bottom:5px;
+  padding:8px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h3 id="loginTitle">Área do Usuário</h3>
+    <input type="password" id="passMain" placeholder="Digite sua senha">
+    <button onclick="handleLogin()">Continuar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="top">
+    <input id="url" placeholder="Pesquisar ou endereço">
+    <button onclick="go()">Ir</button>
+    <button onclick="toggleMenu()">☰</button>
+  </div>
+
+  <iframe id="view"></iframe>
+
+  <div class="bottom">Sistema protegido</div>
+</div>
+
+<!-- MENU -->
+<div id="menu">
+  <div onclick="openHistory()">Histórico</div>
+  <div onclick="lock()">Bloquear</div>
+</div>
+
+<!-- HISTÓRICO -->
+<div id="history"></div>
+
+<script>
+/* ====== CONFIG ====== */
+const PASS_KEY = "user_password";
+const HISTORY_KEY = "nav_history";
+
+/* ====== INICIAL ====== */
+window.onload = ()=>{
+  if(hasPassword()){
+    loginTitle.textContent = "Área do Usuário";
+    passMain.placeholder = "Digite sua senha";
+  }else{
+    loginTitle.textContent = "Criar senha";
+    passMain.placeholder = "Crie uma senha";
+  }
+};
+
+/* ====== SENHA ====== */
+function hasPassword(){
+  return localStorage.getItem(PASS_KEY) !== null;
+}
+
+function handleLogin(){
+  hasPassword() ? login() : createPassword();
+}
+
+function createPassword(){
+  const p = passMain.value.trim();
+  if(p.length < 4){
+    alert("Mínimo 4 caracteres");
+    return;
+  }
+  localStorage.setItem(PASS_KEY,p);
+  unlockApp();
+}
+
+function login(){
+  if(passMain.value === localStorage.getItem(PASS_KEY)){
+    unlockApp();
+  }else{
+    alert("Senha incorreta");
+  }
+}
+
+function unlockApp(){
+  sessionStorage.auth="1";
+  login.style.display="none";
+  app.style.display="flex";
+  passMain.value="";
+}
+
+/* ====== NAVEGAÇÃO ====== */
+function go(){
+  let u=url.value.trim();
+  if(!u) return;
+
+  if(!u.startsWith("http")){
+    u="https://duckduckgo.com/?q="+encodeURIComponent(u);
+  }
+  view.src=u;
+  saveHistory(u);
+}
+
+/* ====== HISTÓRICO ====== */
+function saveHistory(u){
+  if(sessionStorage.auth!=="1")return;
+  const h=JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]");
+  h.push({u,t:new Date().toLocaleString()});
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(h));
+}
+
+function openHistory(){
+  if(sessionStorage.auth!=="1")return;
+  history.innerHTML="";
+  const h=JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]");
+  h.reverse().forEach(i=>{
+    const d=document.createElement("div");
+    d.textContent=i.t+" - "+i.u;
+    history.appendChild(d);
+  });
+  history.style.display="block";
+  menu.style.display="none";
+}
+
+/* ====== MENU ====== */
+function toggleMenu(){
+  menu.style.display = menu.style.display==="block"?"none":"block";
+}
+
+/* ====== BLOQUEIO ====== */
+function lock(){
+  sessionStorage.clear();
+  location.reload();
+}
+</script
